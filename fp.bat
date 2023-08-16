@@ -94,7 +94,15 @@ cd settings
 
 st settingsPage
 
-cd \..\..
+cd ..\..
+
+mkdir assets
+
+cd assets
+
+mkdir images
+
+cd ..
 
 flutter pub get
 

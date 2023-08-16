@@ -23,16 +23,17 @@ if not exist "!Dir!\.." (
     exit /b
 )
 
-if "%2"=="-s"(
+
   echo import "package:flutter/material.dart";> %Dir%
   echo.>> %Dir%
+  echo import "../extra.dart";>> %Dir%
   echo import "../main.dart";>> %Dir%
   echo.>> %Dir%
   echo class SettingsTab extends StatefulWidget {>> %Dir%
   echo   const SettingsTab({super.key});>> %Dir%
   echo.>> %Dir%
   echo   @override>> %Dir%
-  echo   State<SettingsTab> createState^(^) => _SettingsState^(^);>> %Dir%
+  echo   State^<SettingsTab^> createState^(^) =^> _SettingsState^(^);>> %Dir%
   echo }>> %Dir%
   echo.>> %Dir%
   echo class Settings>> %Dir%
@@ -41,16 +42,16 @@ if "%2"=="-s"(
   echo.  >> %Dir%
   echo   static bool developer = false;>> %Dir%
   echo.>> %Dir%
-  echo   static String listToIndexString(List<dynamic> list, String sign) {>> %Dir%
+  echo   static String listToIndexString^(List^<dynamic^> list, String sign^) {>> %Dir%
   echo     return list.asMap().entries.map((entry) {>> %Dir%
   echo       dynamic index = entry.key + 1;>> %Dir%
   echo       dynamic value = entry.value;>> %Dir%
-  echo       return "$index: $value $sign ${index % 2 != 0 ? (value.toString().length == 4 ? "    ": "  ") :"\n"}";>> %Dir%
+  echo       return "^$index: ^$value ^$sign ^${index %% 2 ^!= 0 ? ^(value.toString(^).length == 4 ? "    " : "  "^) :"^\^n"}";>> %Dir%
   echo     }).join();>> %Dir%
   echo   }>> %Dir%
   echo }>> %Dir%
   echo.>> %Dir%
-  echo class _SettingsState extends State<SettingsTab> {>> %Dir%
+  echo class _SettingsState extends State^<SettingsTab^> {>> %Dir%
   echo.>> %Dir%
   echo   @override>> %Dir%
   echo   Widget build(BuildContext context) {>> %Dir%
@@ -109,59 +110,7 @@ if "%2"=="-s"(
   echo     );>> %Dir%
   echo   }>> %Dir%
   echo }>> %Dir%
-)
-else (
-  echo import "package:flutter/material.dart";> %Dir%
-  echo.>> %Dir%
-  echo class !capitalName!Tab extends StatefulWidget {>> %Dir%
-  echo   const !capitalName!Tab({super.key});>> %Dir%
-  echo.>> %Dir%
-  echo   @override>> %Dir%
-  echo   State^<!capitalName!Tab^> createState^(^) ^=^> _!capitalName!TabState^(^);>> %Dir%
-  echo }>> %Dir%
-  echo.>> %Dir%
-  echo.>> %Dir%
-  echo class _!capitalName!TabState extends State^<!capitalName!Tab^> {>> %Dir%
-  echo   @override>> %Dir%
-  echo   Widget build(BuildContext context) {>> %Dir%
-  echo     return WillPopScope(>> %Dir%
-  echo       onWillPop: () async {>> %Dir%
-  echo         return true;>> %Dir%
-  echo       },>> %Dir%
-  echo       child: Scaffold(>> %Dir%
-  echo         extendBody: true,>> %Dir%
-  echo         appBar: AppBar(>> %Dir%
-  echo           centerTitle: true,>> %Dir%
-  echo           automaticallyImplyLeading: false,>> %Dir%
-  echo           leading: null,>> %Dir%
-  echo           actions: null,>> %Dir%
-  echo           titleSpacing: 0,>> %Dir%
-  echo           elevation: 0,>> %Dir%
-  echo           backgroundColor: const Color(0xFFFFFFFF),>> %Dir%
-  echo           title: const Stack(>> %Dir%
-  echo             alignment: Alignment.bottomLeft,>> %Dir%
-  echo             children: [>> %Dir%
-  echo             ],>> %Dir%
-  echo           ),>> %Dir%
-  echo         ),>> %Dir%
-  echo         body: Expanded(>> %Dir%
-  echo           child: Padding(>> %Dir%
-  echo            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),>> %Dir%
-  echo            child: Container(>> %Dir%
-  echo              color: const Color(0xFFFFFFFF),>> %Dir%
-  echo              child: Column(>> %Dir%
-  echo                children: [>> %Dir%
-  echo.>> %Dir%
-  echo                ],>> %Dir%
-  echo              ),>> %Dir%
-  echo            ),>> %Dir%
-  echo          ),>> %Dir%
-  echo         ),>> %Dir%
-  echo       ),>> %Dir%
-  echo     );>> %Dir%
-  echo   }>> %Dir%
-  echo }>> %Dir%
-)
+
 
 for %%A in ("%Dir%\..") do set "parent_dir=%%~dpnA"
 

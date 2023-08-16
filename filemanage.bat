@@ -15,7 +15,7 @@ echo nul > "%currentDir%\%1\src\assets\empty.png"
 (
 echo #include ^<iostream^>
 echo.
-echo int a = 0;
+echo std::String a = "hello world!";
 echo.
 echo int main^(^) {
 echo std::cout ^<^< a ^<^< std::endl^;

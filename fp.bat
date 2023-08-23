@@ -65,15 +65,12 @@ set "exDir=%CD%\lib\extra.dart"
 echo import "package:flutter/widgets.dart";> %exDir%
 echo.>> %exDir%
 echo class GlobalSize {>> %exDir%
-echo   static final GlobalSize _instance = GlobalSize._internal();>> %exDir%
 echo   static late final double height, width;>> %exDir%
-echo.>> %exDir%
-echo   factory GlobalSize(BuildContext context) {>> %exDir%
-echo     height = MediaQuery.of(context).size.height / 100;>> %exDir%
-echo     width = MediaQuery.of(context).size.width / 100;>> %exDir%
-echo     return _instance;>> %exDir%
+echo   GlobalSize(BuildContext context) {>> %exDir%
+echo     final Size size = MediaQuery.of(context).size;>> %exDir%
+echo     height = size.height / 100;>> %exDir%
+echo     width = size.width / 100;>> %exDir%
 echo   }>> %exDir%
-echo   GlobalSize._internal();>> %exDir%
 echo }>> %exDir%
 echo.>> %exDir%
 echo extension DoublePercentExtension on double {>> %exDir%
@@ -82,8 +79,8 @@ echo   double get wp =^> this * GlobalSize.width;>> %exDir%
 echo }>> %exDir%
 echo.>> %exDir%
 echo extension IntPercentExtension on int {>> %exDir%
-echo   int get hp =^> ^(this * GlobalSize.height^).toInt^(^);>> %exDir%
-echo   int get wp =^> ^(this * GlobalSize.width^).toInt^(^);>> %exDir%
+echo   double get hp =^> this * GlobalSize.height;>> %exDir%
+echo   double get wp =^> this * GlobalSize.width;>> %exDir%
 echo }>> %exDir%
 
 cd lib

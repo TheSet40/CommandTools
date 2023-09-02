@@ -1,30 +1,30 @@
 @echo off 
 
-echo .
+echo.
 git pull
 timeout /t 2 /nobreak >nul
 
-echo .
+echo.
 git add .
 timeout /t 2 /nobreak >nul
 
-echo .
+echo.
 git checkout -b %1
 timeout /t 2 /nobreak >nul
 
-echo .
+echo.
 git commit -m "%2"
 timeout /t 2 /nobreak >nul
 
-echo .
+echo.
 git push --set-upstream origin %1
 timeout /t 2 /nobreak >nul
 
-echo .
+echo.
 git checkout main
 timeout /t 2 /nobreak >nul
 
-echo .
+echo.
 git merge %1
 timeout /t 2 /nobreak >nul
 

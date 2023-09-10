@@ -3,8 +3,9 @@ if "%1"=="-s" (
   git status
 
   timeout /t 1 /nobreak >nul
-
+  echo.
   echo use fullmerge with: branchname and then commit message
+  echo.
   exit /b
 )
 
@@ -14,7 +15,7 @@ timeout /t 2 /nobreak >nul
 
 echo.
 git add .
-timeout /t 2 /nobreak >nul
+timeout /t 1 /nobreak >nul
 
 echo.
 git checkout -b %1

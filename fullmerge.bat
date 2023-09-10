@@ -1,4 +1,12 @@
 @echo off 
+if "%1"=="-s" (
+  git status
+
+  timeout /t 1 /nobreak >nul
+
+  echo use fullmerge with: branchname and then commit message
+  exit /b
+)
 
 echo.
 git pull

@@ -23,7 +23,7 @@ if not exist "!Dir!\.." (
     exit /b
 )
 
-if "%2"=="-s"(
+if "%2"=="-s" (
   echo import "package:flutter/material.dart";> %Dir%
   echo.>> %Dir%
   echo import "../main.dart";>> %Dir%
@@ -109,8 +109,7 @@ if "%2"=="-s"(
   echo     );>> %Dir%
   echo   }>> %Dir%
   echo }>> %Dir%
-)
-else (
+) else (
   echo import "package:flutter/material.dart";> %Dir%
   echo.>> %Dir%
   echo class !capitalName!Tab extends StatefulWidget {>> %Dir%

@@ -37,6 +37,4 @@ echo.
 git merge %1
 timeout /t 2 /nobreak >nul
 
-git branch -d %1
-
 exit /b 0

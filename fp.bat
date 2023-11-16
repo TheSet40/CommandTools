@@ -102,7 +102,3 @@ mkdir images
 cd ..
 
 flutter pub get
-
-
-
-

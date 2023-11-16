@@ -1,7 +1,8 @@
 @echo off
 
 if "%1"=="manual" (
-  cd android && ./gradlew assembleRelease
+  cd android
+  gradlew assembleRelease
   exit /b
 )
 

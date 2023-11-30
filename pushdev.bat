@@ -1,4 +1,5 @@
-
+@echo off 
+setlocal enabledelayedexpansion
 
 set "COMBINED_PARAMS="
 set "FIRST_PARAM=%1"

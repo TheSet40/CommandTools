@@ -2,7 +2,11 @@
 
 if "%1"=="manual" (
   cd android
-  gradlew assembleRelease
+  if "%2"=="st" (
+    gradlew assembleRelease --stacktrace 
+  ) else (
+    gradlew assembleRelease 
+  )
   exit /b
 )
 

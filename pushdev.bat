@@ -16,12 +16,18 @@ echo "!COMBINED_PARAMS!"
 
 
 echo.
+git pull
+timeout /t 2 /nobreak >nul
+
+echo.
 git add .
 timeout /t 1 /nobreak >nul
 
-echo.
-git checkout -b !FIRST_PARAM!
-timeout /t 2 /nobreak >nul
+if "!FIRST_PARAM!" NEQ "/" (
+    echo.
+    git checkout -b !FIRST_PARAM!
+    timeout /t 2 /nobreak >nul
+)
 
 echo.
 git commit -m "!COMBINED_PARAMS!"

@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableDelayedExpansion
 
-if "%1"=="-list" (
+if "%1"=="list" (
 
     set "SCRIPT_DIR=%~dp0"
 
@@ -18,7 +18,7 @@ if "%1"=="-list" (
 
 ) 
 
-if "%1"=="-commands" (
+if "%1"=="commands" (
     set "SCRIPT_DIR=%~dp0"
     echo Available commands:
 

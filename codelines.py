@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Count real code lines (no blanks, no comment-only lines) in source files.
 
-Usage: codelines [directory] [--summary] [--perlanguage]
-  --summary      only print the total, not each file
-  --perlanguage  print a per-language breakdown
+Usage: codelines [directory] [--summary] [--shortsummary] [--chars]
+  --summary       only print the summary, not each file
+  --shortsummary  summary as a single total line instead of the per-language table
+  --chars         also show characters per file and in the short summary
+                  (counted code lines, without indentation)
 
 Only language files are counted; data/docs (xml, json, md, yaml ...) are ignored.
 Physical lines are counted, so editor soft-wrapping has no effect.
@@ -34,20 +36,26 @@ SKIP_DIRS = {"node_modules", ".git", "bin", "obj", "build", "dist", "vendor", ".
 
 
 def count_file(path, style):
-    n, in_block = 0, False
+    n, chars, in_block = 0, 0, False
     with open(path, encoding="utf-8", errors="replace") as f:
         for raw in f:
             s = raw.strip()
             if not s:
                 continue
             if style == HASH:
-                n += not s.startswith("#")
+                code = not s.startswith("#")
+                n += code
+                chars += len(s) * code
                 continue
             if style == DASH:
-                n += not s.startswith("--")
+                code = not s.startswith("--")
+                n += code
+                chars += len(s) * code
                 continue
             if style == REM:
-                n += not (s.lower().startswith("rem ") or s.lower() == "rem" or s.startswith("::"))
+                code = not (s.lower().startswith("rem ") or s.lower() == "rem" or s.startswith("::"))
+                n += code
+                chars += len(s) * code
                 continue
             has_code, i = False, 0
             while i < len(s):
@@ -64,7 +72,70 @@ def count_file(path, style):
                     has_code = has_code or not s[i].isspace()
                     i += 1
             n += has_code
-    return n
+            chars += len(s) * has_code
+    return n, chars
+
+
+def sv(n):
+    return f"{n:,}".replace(",", " ")
+
+
+def pct(part, whole):
+    return f"{part / whole * 100:.1f}".replace(".", ",") + " %" if whole else "-"
+
+
+def print_ascii_table(headers, rows, right_aligned=(), footer=None):
+    rows = list(rows)
+    all_rows = rows + ([footer] if footer else [])
+    widths = [
+        max(len(str(row[i])) for row in [headers] + all_rows)
+        for i in range(len(headers))
+    ]
+
+    def border():
+        return "+" + "+".join("-" * (width + 2) for width in widths) + "+"
+
+    def row(values):
+        cells = []
+        for i, value in enumerate(values):
+            value = str(value)
+            cells.append(value.rjust(widths[i]) if i in right_aligned else value.ljust(widths[i]))
+        return "| " + " | ".join(cells) + " |"
+
+    print(border())
+    print(row(headers))
+    print(border())
+    for values in rows:
+        print(row(values))
+    if footer:
+        print(border())
+        print(row(footer))
+    print(border())
+
+
+def print_table(by_lang, files, total, total_chars):
+    rows = []
+    for lang, (file_count, line_count, char_count) in sorted(
+        by_lang.items(), key=lambda kv: -kv[1][1]
+    ):
+        rows.append((
+            lang,
+            sv(file_count), pct(file_count, files),
+            sv(line_count), pct(line_count, total),
+            sv(char_count), pct(char_count, total_chars),
+        ))
+    footer = (
+        "Total",
+        sv(files), pct(files, files),
+        sv(total), pct(total, total),
+        sv(total_chars), pct(total_chars, total_chars),
+    )
+    print_ascii_table(
+        ("Language", "Files", "Files %", "Lines", "Lines %", "Chars", "Chars %"),
+        rows,
+        right_aligned=(1, 2, 3, 4, 5, 6),
+        footer=footer,
+    )
 
 
 def main():
@@ -73,8 +144,9 @@ def main():
         print(__doc__)
         sys.exit(1)
     summary = "--summary" in args
-    perlang = "--perlanguage" in args
-    rest = [a for a in args if a not in ("--summary", "--perlanguage")]
+    short = "--shortsummary" in args
+    show_chars = "--chars" in args
+    rest = [a for a in args if a not in ("--summary", "--shortsummary", "--chars", "--perlanguage")]
     if len(rest) > 1 or (rest and rest[0].startswith("-")):
         print(f"Unknown argument(s): {' '.join(rest)}\n")
         print(__doc__)
@@ -84,7 +156,8 @@ def main():
         print(f"ERROR: Directory not found: {root}")
         sys.exit(2)
 
-    by_lang, files, total = {}, 0, 0
+    by_lang, files, total, total_chars = {}, 0, 0, 0
+    file_rows = []
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS)
         for name in sorted(filenames):
@@ -93,25 +166,35 @@ def main():
                 continue
             path = os.path.join(dirpath, name)
             try:
-                n = count_file(path, lang_style[1])
+                n, c = count_file(path, lang_style[1])
             except OSError:
                 continue
             files += 1
             total += n
-            entry = by_lang.setdefault(lang_style[0], [0, 0])
+            total_chars += c
+            entry = by_lang.setdefault(lang_style[0], [0, 0, 0])
             entry[0] += 1
             entry[1] += n
+            entry[2] += c
             if not summary:
-                print(f"{n:8}  {os.path.relpath(path, root)}")
+                file_rows.append((
+                    sv(n),
+                    *([sv(c)] if show_chars else []),
+                    os.path.relpath(path, root),
+                ))
 
     if not summary:
+        print_ascii_table(
+            ("Lines", *(["Chars"] if show_chars else []), "File"),
+            file_rows,
+            right_aligned=tuple(range(1 + show_chars)),
+        )
         print()
-    if perlang:
-        print(f"{'Language':<14}{'Files':>7}{'Lines':>10}")
-        for lang, (f, n) in sorted(by_lang.items(), key=lambda kv: -kv[1][1]):
-            print(f"{lang:<14}{f:>7}{n:>10}")
-        print()
-    print(f"Total: {total} lines in {files} files")
+    if short:
+        print(f"Total: {sv(total)} lines in {sv(files)} files"
+              + (f", {sv(total_chars)} characters" if show_chars else ""))
+    else:
+        print_table(by_lang, files, total, total_chars)
 
 
 if __name__ == "__main__":

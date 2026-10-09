@@ -241,8 +241,8 @@ class FileHandling(unittest.TestCase):
 
     def test_build_variant_and_hidden_dirs_skipped(self):
         skipped = ["build-consumer", "build_debug", "Build-Release", "cmake-build-debug", "x-build",
-                   ".vs", ".idea", ".git", "node_modules", "Debug.dir", "foo.egg-info", "_deps"]
-        kept = ["src", "include", "rebuild", "builder", "buildings", "rebuilt-src"]
+                   ".vs", ".idea", ".git", "node_modules", "Debug.dir", "foo.egg-info", "_deps", "builder", "buildings"]
+        kept = ["src", "include", "rebuild", "rebuilt-src"]
         with tempfile.TemporaryDirectory() as d:
             for name in skipped + kept:
                 os.makedirs(os.path.join(d, name))

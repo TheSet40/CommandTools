@@ -1,17 +1,25 @@
 #!/usr/bin/env python3
 """Count real code lines (no blanks, no comment-only lines) in source files.
 
-Usage: codelines [directory] [--summary] [--shortsummary] [--chars]
+Usage: codelines [directory] [--summary] [--shortsummary] [--chars] [--perdirectory]
+                 [--jsonoutput <file>]
   --summary       only print the summary, not each file
   --shortsummary  summary as a single total line instead of the per-language table
   --chars         also show characters per file and in the short summary
                   (counted code lines, without indentation)
+  --perdirectory  summary table per directory (files directly in it) instead of per language
+  --jsonoutput    also write the data to <file> as JSON; the structure follows the flags
+                  (no "files" with --summary, only "total" with --shortsummary,
+                  "directories" instead of "languages" with --perdirectory,
+                  "chars" only with --chars)
 
 Only language files are counted; data/docs (xml, json, md, yaml ...) are ignored.
 Physical lines are counted, so editor soft-wrapping has no effect.
 """
+import json
 import os
 import sys
+import time
 
 # extension -> (language, comment style)
 C = "c"        # // and /* */
@@ -113,7 +121,7 @@ def print_ascii_table(headers, rows, right_aligned=(), footer=None):
     print(border())
 
 
-def print_table(by_lang, files, total, total_chars):
+def print_table(by_lang, files, total, total_chars, label="Language"):
     rows = []
     for lang, (file_count, line_count, char_count) in sorted(
         by_lang.items(), key=lambda kv: -kv[1][1]
@@ -131,7 +139,7 @@ def print_table(by_lang, files, total, total_chars):
         sv(total_chars), pct(total_chars, total_chars),
     )
     print_ascii_table(
-        ("Language", "Files", "Files %", "Lines", "Lines %", "Chars", "Chars %"),
+        (label, "Files", "Files %", "Lines", "Lines %", "Chars", "Chars %"),
         rows,
         right_aligned=(1, 2, 3, 4, 5, 6),
         footer=footer,
@@ -139,6 +147,7 @@ def print_table(by_lang, files, total, total_chars):
 
 
 def main():
+    start = time.perf_counter()
     args = sys.argv[1:]
     if any(a in ("-h", "--help", "/?") for a in args):
         print(__doc__)
@@ -146,7 +155,24 @@ def main():
     summary = "--summary" in args
     short = "--shortsummary" in args
     show_chars = "--chars" in args
-    rest = [a for a in args if a not in ("--summary", "--shortsummary", "--chars", "--perlanguage")]
+    perDir = "--perdirectory" in args
+    jsonPath = None
+    rest = []
+    i = 0
+    while i < len(args):
+        a = args[i]
+        if a == "--jsonoutput":
+            if i + 1 >= len(args) or args[i + 1].startswith("-"):
+                print("--jsonoutput requires a file path\n")
+                print(__doc__)
+                sys.exit(1)
+            jsonPath = args[i + 1]
+            i += 1
+        elif a.startswith("--jsonoutput="):
+            jsonPath = a.split("=", 1)[1]
+        elif a not in ("--summary", "--shortsummary", "--chars", "--perlanguage", "--perdirectory"):
+            rest.append(a)
+        i += 1
     if len(rest) > 1 or (rest and rest[0].startswith("-")):
         print(f"Unknown argument(s): {' '.join(rest)}\n")
         print(__doc__)
@@ -157,7 +183,9 @@ def main():
         sys.exit(2)
 
     by_lang, files, total, total_chars = {}, 0, 0, 0
+    byDir = {}
     file_rows = []
+    fileData = []
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS)
         for name in sorted(filenames):
@@ -176,7 +204,13 @@ def main():
             entry[0] += 1
             entry[1] += n
             entry[2] += c
+            relDir = os.path.relpath(dirpath, root)
+            d = byDir.setdefault(relDir, [0, 0, 0])
+            d[0] += 1
+            d[1] += n
+            d[2] += c
             if not summary:
+                fileData.append((os.path.relpath(path, root), lang_style[0], n, c))
                 file_rows.append((
                     sv(n),
                     *([sv(c)] if show_chars else []),
@@ -193,8 +227,32 @@ def main():
     if short:
         print(f"Total: {sv(total)} lines in {sv(files)} files"
               + (f", {sv(total_chars)} characters" if show_chars else ""))
+    elif perDir:
+        print_table(byDir, files, total, total_chars, label="Directory")
     else:
         print_table(by_lang, files, total, total_chars)
+
+    if jsonPath:
+        def stats(files_, lines_, chars_):
+            out = {"files": files_, "lines": lines_}
+            if show_chars:
+                out["chars"] = chars_
+            return out
+
+        data = {"root": root, "total": stats(files, total, total_chars)}
+        data["runtimeSeconds"] = round(time.perf_counter() - start, 4)
+        if not short:
+            groups, key = (byDir, "directories") if perDir else (by_lang, "languages")
+            data[key] = {k: stats(*v) for k, v in sorted(groups.items(), key=lambda kv: -kv[1][1])}
+        if not summary:
+            data["files"] = [
+                {"path": p, "language": lg, "lines": n, **({"chars": c} if show_chars else {})}
+                for p, lg, n, c in fileData
+            ]
+        with open(jsonPath, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+        print(f"JSON written to {os.path.abspath(jsonPath)}")
+    print(f"Run time: {time.perf_counter() - start:.3f} s")
 
 
 if __name__ == "__main__":

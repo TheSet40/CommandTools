@@ -1,5 +1,4 @@
 // codelines counts real code lines (no blanks, no comment-only lines) in source files.
-// codelines counts real code lines; see usage text below.
 package main
 
 import (
@@ -14,6 +13,8 @@ import (
 	"time"
 	"unicode"
 	"unicode/utf8"
+
+	"commandtools/internal/skipdir"
 )
 
 const usage = `Usage: codelines [directory] [--summary] [--shortsummary] [--chars] [--perdirectory]
@@ -72,11 +73,6 @@ func init() {
 			langs[e] = lang{d.name, d.style}
 		}
 	}
-}
-
-var skipDirs = map[string]bool{
-	"node_modules": true, ".git": true, "bin": true, "obj": true, "build": true, "dist": true,
-	"vendor": true, ".dart_tool": true, "Pods": true, "__pycache__": true, ".venv": true, "venv": true,
 }
 
 func countFile(path string, st style) (int, int, error) {
@@ -389,7 +385,7 @@ func main() {
 		var subdirs []string
 		for _, e := range entries {
 			if e.IsDir() {
-				if !skipDirs[e.Name()] {
+				if !skipdir.Skip(e.Name()) {
 					subdirs = append(subdirs, filepath.Join(dir, e.Name()))
 				}
 

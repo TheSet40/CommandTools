@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"commandtools/internal/skipdir"
 )
 
 
@@ -220,13 +222,13 @@ func TestSkipDir(t *testing.T) {
 	kept := []string{"src", "include", "rebuild", "rebuilt-src"}
 
 	for _, n := range skipped {
-		if !skipDir(n) {
+		if !skipdir.Skip(n) {
 			t.Errorf("%s should be skipped", n)
 		}
 	}
 
 	for _, n := range kept {
-		if skipDir(n) {
+		if skipdir.Skip(n) {
 			t.Errorf("%s should be kept", n)
 		}
 	}

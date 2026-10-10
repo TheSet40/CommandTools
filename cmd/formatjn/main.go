@@ -18,6 +18,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"commandtools/internal/skipdir"
 )
 
 func summary(start time.Time, files, formatted int) string {
@@ -45,7 +47,7 @@ func walk(dir string, visit func(string)) {
 	for _, e := range entries {
 		switch {
 		case e.IsDir():
-			if !skipDir(e.Name()) {
+			if !skipdir.Skip(e.Name()) {
 				subdirs = append(subdirs, e.Name())
 			}
 		case extensions[fileExt(e.Name())]:

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -17,32 +16,6 @@ var extensions = map[string]bool{
 	".hxx": true, ".cs": true, ".java": true, ".kt": true, ".swift": true, ".m": true, ".mm": true,
 	".go": true, ".rs": true, ".dart": true, ".php": true, ".js": true, ".jsx": true, ".mjs": true,
 	".ts": true, ".tsx": true, ".glsl": true, ".hlsl": true, ".shader": true,
-}
-
-// Lowercase names; matching is case-insensitive.
-var skipDirNames = map[string]bool{
-	"node_modules": true, "bin": true, "obj": true, "build": true, "dist": true, "out": true,
-	"vendor": true, "pods": true, "__pycache__": true, "venv": true, "target": true,
-	"_deps": true, "third_party": true, "external": true,
-}
-
-// Build variants (build-consumer, cmake-build-release), hidden dirs (.git, .vs, .idea) and
-// CMake/virtualenv leftovers.
-var skipDirPatterns = []string{"build*", "*-build", "*_build", "cmake-build-*", ".*", "*.dir", "*.egg-info"}
-
-func skipDir(name string) bool {
-	low := strings.ToLower(name)
-	if skipDirNames[low] {
-		return true
-	}
-
-	for _, p := range skipDirPatterns {
-		if ok, _ := path.Match(p, low); ok {
-			return true
-		}
-	}
-
-	return false
 }
 
 // fileExt mirrors Python's os.path.splitext: leading dots are not an extension (".h" has none).

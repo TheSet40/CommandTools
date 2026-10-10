@@ -1,0 +1,1 @@
+Read "./AGENTS.md" for instructions that should not be deviated from, unless given approval.

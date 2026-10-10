@@ -1,27 +1,27 @@
 # Architecture
 
-CommandTools is a set of small command-line tools. Each tool is a standalone script in the repository root.
+CommandTools is a set of small command-line tools written in Go. One module (`commandtools`) at the repository root, one `main` package per tool.
 
 ## Layout
 
 | Path | Purpose |
 | --- | --- |
-| `*.py` | One Python 3 script per command (`codelines`, `pushdev`, `fullmerge`, `checkprocess`, `build_eas`, `_format_jn`). |
-| `install.py`, `install.bat` | Generate `bin/` launchers and add `bin/` to PATH. |
-| `bin/` | Generated launchers, one per script. Not hand-edited by the installer's users. |
-| `formatjn/` | Go module: JSON formatter (own `go.mod`). |
-| `codelines_go/` | Go module: port of `codelines.py` with identical flags, tables and JSON output. |
-| `tests/` | Python tests. |
+| `cmd/<tool>/` | One tool per folder: `codelines`, `pushdev`, `fullmerge`, `checkprocess`, `build_eas`, `formatjn` (installed as `_format_jn`), `install`. |
+| `internal/gitrun/` | Shared git runner for `pushdev` and `fullmerge` (prints a blank line, runs git, exits with git's code on failure). |
+| `cmd/install/` | Builds every `cmd/*` tool except itself into `bin/` and adds `bin/` to PATH (registry on Windows via `reg.exe`, rc files elsewhere). |
+| `install.bat` | Runs `go run ./cmd/install` from the repository root. |
+| `bin/` | Generated binaries, one per tool, named after the command. Git-ignored. |
+
+Adding a tool: create `cmd/<name>/main.go` and re-run the installer. A folder name that is not a valid command name needs an entry in `commandNames` in `cmd/install/main.go`.
 
 ## codelines
 
-Both implementations walk the directory top-down (sorted), skip `SKIP_DIRS`, count code lines per extension-specific comment style, and accumulate totals per language and per directory (files directly in the directory).
+Walks the directory top-down (sorted), skips `skipDirs`, counts code lines per extension-specific comment style, and accumulates totals per language and per directory (files directly in the directory).
 Output flags select the console tables and the shape of the optional JSON file (`total` always, `languages` or `directories` unless `--shortsummary`, `files` unless `--summary`, `chars` only with `--chars`).
-Keep the two implementations in step when changing flags, the extension table or the JSON shape.
 
 ## Caveats register
 
 | Where | Why it matters | Severity |
 | --- | --- | --- |
-| `codelines_go/main.go` | Character totals differ from `codelines.py` by a few characters on large trees (Unicode whitespace trimming differs between Go and Python). | 🟡 |
-| `codelines_go/codelines.exe` | Built by hand with `go build`; not wired into `bin/` or the installer, so the `codelines` command still runs the Python version. | 🟡 |
+| `cmd/install/path_windows.go` | PATH is read and written through `reg.exe` instead of the registry API to avoid an external dependency; a very long PATH value is passed on the command line. | 🟡 |
+| `cmd/install/main.go` | Installing needs Go on the machine and must run from the repository root (`install.bat` does this). | 🟡 |

@@ -1,5 +1,5 @@
 // codelines counts real code lines (no blanks, no comment-only lines) in source files.
-// Go port of codelines.py; see usage text below.
+// codelines counts real code lines; see usage text below.
 package main
 
 import (
@@ -84,6 +84,7 @@ func countFile(path string, st style) (int, int, error) {
 	if err != nil {
 		return 0, 0, err
 	}
+
 	defer f.Close()
 	n, chars, inBlock := 0, 0, false
 	sc := bufio.NewScanner(f)
@@ -94,6 +95,7 @@ func countFile(path string, st style) (int, int, error) {
 		if s == "" {
 			continue
 		}
+
 		code := false
 		switch st {
 		case styleHash:
@@ -111,6 +113,7 @@ func countFile(path string, st style) (int, int, error) {
 					if j < 0 {
 						break
 					}
+
 					inBlock, i = false, i+j+2
 				} else if strings.HasPrefix(s[i:], "//") ||
 					(st == stylePHP && s[i] == '#' && !strings.HasPrefix(s[i:], "#[")) {
@@ -124,11 +127,13 @@ func countFile(path string, st style) (int, int, error) {
 				}
 			}
 		}
+
 		if code {
 			n++
 			chars += utf8.RuneCountInString(s)
 		}
 	}
+
 	return n, chars, sc.Err()
 }
 
@@ -137,26 +142,33 @@ func splitLines(data []byte, atEOF bool) (int, []byte, error) {
 	if atEOF && len(data) == 0 {
 		return 0, nil, nil
 	}
+
 	for i, b := range data {
 		if b == '\n' {
 			return i + 1, data[:i], nil
 		}
+
 		if b == '\r' {
 			if i+1 < len(data) {
 				if data[i+1] == '\n' {
 					return i + 2, data[:i], nil
 				}
+
 				return i + 1, data[:i], nil
 			}
+
 			if atEOF {
 				return i + 1, data[:i], nil
 			}
+
 			return 0, nil, nil
 		}
 	}
+
 	if atEOF {
 		return len(data), data, nil
 	}
+
 	return 0, nil, nil
 }
 
@@ -167,8 +179,10 @@ func sv(n int) string {
 		if i > 0 && (len(s)-i)%3 == 0 {
 			b.WriteByte(' ')
 		}
+
 		b.WriteRune(c)
 	}
+
 	return b.String()
 }
 
@@ -176,6 +190,7 @@ func pct(part, whole int) string {
 	if whole == 0 {
 		return "-"
 	}
+
 	return strings.Replace(fmt.Sprintf("%.1f", float64(part)/float64(whole)*100), ".", ",", 1) + " %"
 }
 
@@ -184,6 +199,7 @@ func printTable(headers []string, rows [][]string, right map[int]bool, footer []
 	if footer != nil {
 		all = append(all, footer)
 	}
+
 	widths := make([]int, len(headers))
 	for _, r := range all {
 		for i, v := range r {
@@ -192,13 +208,16 @@ func printTable(headers []string, rows [][]string, right map[int]bool, footer []
 			}
 		}
 	}
+
 	border := func() string {
 		parts := make([]string, len(widths))
 		for i, w := range widths {
 			parts[i] = strings.Repeat("-", w+2)
 		}
+
 		return "+" + strings.Join(parts, "+") + "+"
 	}
+
 	row := func(vals []string) string {
 		cells := make([]string, len(vals))
 		for i, v := range vals {
@@ -209,18 +228,22 @@ func printTable(headers []string, rows [][]string, right map[int]bool, footer []
 				cells[i] = v + pad
 			}
 		}
+
 		return "| " + strings.Join(cells, " | ") + " |"
 	}
+
 	fmt.Println(border())
 	fmt.Println(row(headers))
 	fmt.Println(border())
 	for _, r := range rows {
 		fmt.Println(row(r))
 	}
+
 	if footer != nil {
 		fmt.Println(border())
 		fmt.Println(row(footer))
 	}
+
 	fmt.Println(border())
 }
 
@@ -236,9 +259,11 @@ func (g *group) add(key string, n, c int) {
 	e, ok := g.stats[key]
 	if !ok {
 		e = &[3]int{}
+
 		g.stats[key] = e
 		g.keys = append(g.keys, key)
 	}
+
 	e[0]++
 	e[1] += n
 	e[2] += c
@@ -256,7 +281,9 @@ func (g *group) printTable(label string, files, total, totalChars int) {
 		e := g.stats[k]
 		rows = append(rows, []string{k, sv(e[0]), pct(e[0], files), sv(e[1]), pct(e[1], total), sv(e[2]), pct(e[2], totalChars)})
 	}
+
 	footer := []string{"Total", sv(files), pct(files, files), sv(total), pct(total, total), sv(totalChars), pct(totalChars, totalChars)}
+
 	printTable([]string{label, "Files", "Files %", "Lines", "Lines %", "Chars", "Chars %"}, rows,
 		map[int]bool{1: true, 2: true, 3: true, 4: true, 5: true, 6: true}, footer)
 }
@@ -274,15 +301,18 @@ func (o orderedMap) MarshalJSON() ([]byte, error) {
 		if i > 0 {
 			b.WriteByte(',')
 		}
+
 		kb, _ := json.Marshal(k)
 		vb, err := json.Marshal(o.vals[k])
 		if err != nil {
 			return nil, err
 		}
+
 		b.Write(kb)
 		b.WriteByte(':')
 		b.Write(vb)
 	}
+
 	b.WriteByte('}')
 	return []byte(b.String()), nil
 }
@@ -321,6 +351,7 @@ func main() {
 			if i+1 >= len(args) || strings.HasPrefix(args[i+1], "-") {
 				fail(1, "--jsonoutput requires a file path\n\n"+usage)
 			}
+
 			i++
 			jsonPath = args[i]
 		case strings.HasPrefix(a, "--jsonoutput="):
@@ -329,13 +360,16 @@ func main() {
 			rest = append(rest, a)
 		}
 	}
+
 	if len(rest) > 1 || (len(rest) == 1 && strings.HasPrefix(rest[0], "-")) {
 		fail(1, fmt.Sprintf("Unknown argument(s): %s\n\n%s", strings.Join(rest, " "), usage))
 	}
+
 	rootArg := "."
 	if len(rest) == 1 {
 		rootArg = rest[0]
 	}
+
 	root, _ := filepath.Abs(rootArg)
 	if st, err := os.Stat(root); err != nil || !st.IsDir() {
 		fail(2, "ERROR: Directory not found: "+root+"\n")
@@ -351,23 +385,28 @@ func main() {
 		if err != nil {
 			return
 		}
+
 		var subdirs []string
 		for _, e := range entries {
 			if e.IsDir() {
 				if !skipDirs[e.Name()] {
 					subdirs = append(subdirs, filepath.Join(dir, e.Name()))
 				}
+
 				continue
 			}
+
 			l, ok := langs[strings.ToLower(filepath.Ext(e.Name()))]
 			if !ok {
 				continue
 			}
+
 			path := filepath.Join(dir, e.Name())
 			n, c, err := countFile(path, l.style)
 			if err != nil {
 				continue
 			}
+
 			files++
 			total += n
 			totalChars += c
@@ -379,36 +418,46 @@ func main() {
 				fileData = append(fileData, fileEntry{rel, l.name, n, c})
 			}
 		}
+
 		for _, d := range subdirs {
 			walk(d)
 		}
 	}
+
 	walk(root)
 
 	if !summary {
 		headers := []string{"Lines"}
+
 		right := map[int]bool{0: true}
+
 		if showChars {
 			headers = append(headers, "Chars")
 			right[1] = true
 		}
+
 		headers = append(headers, "File")
 		var rows [][]string
 		for _, f := range fileData {
 			r := []string{sv(f.n)}
+
 			if showChars {
 				r = append(r, sv(f.c))
 			}
+
 			rows = append(rows, append(r, f.path))
 		}
+
 		printTable(headers, rows, right, nil)
 		fmt.Println()
 	}
+
 	if short {
 		extra := ""
 		if showChars {
 			extra = ", " + sv(totalChars) + " characters"
 		}
+
 		fmt.Printf("Total: %s lines in %s files%s\n", sv(total), sv(files), extra)
 	} else if perDir {
 		byDir.printTable("Directory", files, total, totalChars)
@@ -419,23 +468,31 @@ func main() {
 	if jsonPath != "" {
 		stats := func(e [3]int) map[string]any {
 			m := map[string]any{"files": e[0], "lines": e[1]}
+
 			if showChars {
 				m["chars"] = e[2]
 			}
+
 			return m
 		}
+
 		statsOrdered := func(e [3]int) orderedMap {
 			o := orderedMap{keys: []string{"files", "lines"}, vals: stats(e)}
+
 			if showChars {
 				o.keys = append(o.keys, "chars")
 			}
+
 			return o
 		}
+
 		data := orderedMap{vals: map[string]any{}}
+
 		set := func(k string, v any) {
 			data.keys = append(data.keys, k)
 			data.vals[k] = v
 		}
+
 		set("root", root)
 		set("total", statsOrdered([3]int{files, total, totalChars}))
 		set("runtimeSeconds", float64(time.Since(start).Microseconds())/1e6)
@@ -444,38 +501,50 @@ func main() {
 			if perDir {
 				g, key = byDir, "directories"
 			}
+
 			om := orderedMap{vals: map[string]any{}}
+
 			for _, k := range g.sorted() {
 				om.keys = append(om.keys, k)
 				om.vals[k] = statsOrdered(*g.stats[k])
 			}
+
 			set(key, om)
 		}
+
 		if !summary {
 			var list []any
 			for _, f := range fileData {
 				o := orderedMap{keys: []string{"path", "language", "lines"},
 					vals: map[string]any{"path": f.path, "language": f.lang, "lines": f.n}}
+
 				if showChars {
 					o.keys = append(o.keys, "chars")
 					o.vals["chars"] = f.c
 				}
+
 				list = append(list, o)
 			}
+
 			if list == nil {
 				list = []any{}
 			}
+
 			set("files", list)
 		}
+
 		out, err := json.MarshalIndent(data, "", "  ")
 		if err == nil {
 			err = os.WriteFile(jsonPath, out, 0o644)
 		}
+
 		if err != nil {
 			fail(2, "ERROR: "+err.Error()+"\n")
 		}
+
 		abs, _ := filepath.Abs(jsonPath)
 		fmt.Println("JSON written to " + abs)
 	}
+
 	fmt.Printf("Run time: %.3f s\n", time.Since(start).Seconds())
 }

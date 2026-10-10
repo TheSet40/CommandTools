@@ -9,7 +9,7 @@ import (
 	"unicode/utf8"
 )
 
-// Port of _format_jn.py. Keep the two in sync; format_test.go mirrors tests/test_format_jn.py.
+// Formatting rules of _format_jn.
 
 // Brace-style languages from codelines, minus CSS/Vue.
 var extensions = map[string]bool{
@@ -35,11 +35,13 @@ func skipDir(name string) bool {
 	if skipDirNames[low] {
 		return true
 	}
+
 	for _, p := range skipDirPatterns {
 		if ok, _ := path.Match(p, low); ok {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -50,6 +52,7 @@ func fileExt(name string) string {
 	if i < 0 {
 		return ""
 	}
+
 	return strings.ToLower(trimmed[i:])
 }
 
@@ -79,12 +82,15 @@ func splitLines(text string) []string {
 			if i+1 < len(text) && text[i+1] == '\n' {
 				i++
 			}
+
 			start = i + 1
 		}
 	}
+
 	if start < len(text) {
 		lines = append(lines, text[start:])
 	}
+
 	return lines
 }
 
@@ -110,6 +116,7 @@ func splitCase(line string) (indent, label, body string, ok bool) {
 		for i < len(rest) && unicode.IsSpace(rune(rest[i])) {
 			i++
 		}
+
 		if i < len(rest) && rest[i] == ':' {
 			colons = append(colons, i)
 		}
@@ -119,20 +126,25 @@ func splitCase(line string) (indent, label, body string, ok bool) {
 		if i+1 < len(rest) && rest[i+1] == ':' {
 			continue
 		}
+
 		tail := strings.TrimLeftFunc(rest[i+1:], unicode.IsSpace)
 		first, w := utf8.DecodeRuneInString(tail)
 		if tail == "" || first == '/' || first == '{' {
 			continue
 		}
+
 		if !strings.Contains(tail[w:], ";") {
 			continue
 		}
+
 		label = strings.TrimRightFunc(rest[:i], unicode.IsSpace)
 		if strings.Count(label, "'")%2 != 0 || strings.Count(label, `"`)%2 != 0 {
 			return "", "", "", false
 		}
+
 		return indent, label, strings.TrimRightFunc(tail, unicode.IsSpace), true
 	}
+
 	return "", "", "", false
 }
 
@@ -144,12 +156,15 @@ func splitCases(lines []string) []string {
 			out = append(out, line)
 			continue
 		}
+
 		step := "    "
 		if strings.Contains(indent, "\t") {
 			step = "\t"
 		}
+
 		out = append(out, indent+label+":", indent+step+body)
 	}
+
 	return out
 }
 
@@ -165,6 +180,7 @@ func stripCode(line string, inComment bool) (string, bool) {
 			if j < 0 {
 				return string(out), true
 			}
+
 			i += j + 2
 			inComment = false
 		case strings.HasPrefix(line[i:], "//"):
@@ -182,12 +198,14 @@ func stripCode(line string, inComment bool) (string, bool) {
 					i++
 				}
 			}
+
 			i++
 		default:
 			out = append(out, line[i])
 			i++
 		}
 	}
+
 	return string(out), inComment
 }
 
@@ -196,6 +214,7 @@ func formatText(text string) string {
 	if strings.Contains(text, "\r\n") {
 		eol = "\r\n"
 	}
+
 	lines := splitCases(splitLines(text))
 	out := make([]string, 0, len(lines)+len(lines)/8)
 	var scopes []bool // one entry per open brace: true for a namespace
@@ -207,6 +226,7 @@ func formatText(text string) string {
 		if len(out) > 0 {
 			prev = strings.TrimSpace(out[len(out)-1])
 		}
+
 		if cur != "" && prev != "" && !prevComment && !prevNsClose {
 			if last := prev[len(prev)-1]; last == ';' || last == '}' {
 				afterBrace := strings.HasSuffix(prev, "}") || strings.HasSuffix(prev, "};") ||
@@ -217,6 +237,7 @@ func formatText(text string) string {
 				}
 			}
 		}
+
 		out = append(out, line)
 
 		prevComment = inComment || commentRe.MatchString(cur)
@@ -235,10 +256,12 @@ func formatText(text string) string {
 					if scopes[n-1] {
 						last = "ns"
 					}
+
 					scopes = scopes[:n-1]
 				}
 			}
 		}
+
 		prevNsClose = last == "ns"
 	}
 
@@ -246,5 +269,6 @@ func formatText(text string) string {
 	if strings.HasSuffix(text, "\n") {
 		result += eol
 	}
+
 	return result
 }

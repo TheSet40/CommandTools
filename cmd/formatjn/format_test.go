@@ -10,7 +10,6 @@ import (
 	"testing"
 )
 
-// Mirrors tests/test_format_jn.py.
 
 func lines(s ...string) string { return strings.Join(s, "\n") + "\n" }
 
@@ -19,6 +18,7 @@ func check(t *testing.T, source, expected string) {
 	if got := formatText(source); got != expected {
 		t.Errorf("format mismatch\n--- got ---\n%q\n--- want ---\n%q", got, expected)
 	}
+
 	// formatting must be stable
 	if got := formatText(expected); got != expected {
 		t.Errorf("not idempotent\n--- got ---\n%q\n--- want ---\n%q", got, expected)
@@ -216,12 +216,15 @@ func TestCaseSplitting(t *testing.T) {
 func TestSkipDir(t *testing.T) {
 	skipped := []string{"build-consumer", "build_debug", "Build-Release", "cmake-build-debug", "x-build",
 		".vs", ".idea", ".git", "node_modules", "Debug.dir", "foo.egg-info", "_deps", "builder", "buildings"}
+
 	kept := []string{"src", "include", "rebuild", "rebuilt-src"}
+
 	for _, n := range skipped {
 		if !skipDir(n) {
 			t.Errorf("%s should be skipped", n)
 		}
 	}
+
 	for _, n := range kept {
 		if skipDir(n) {
 			t.Errorf("%s should be kept", n)
@@ -234,6 +237,7 @@ func writeFile(t *testing.T, path, content string) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatal(err)
 	}
+
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -253,6 +257,7 @@ func TestFileHandling(t *testing.T) {
 				t.Errorf("%s missing from extensions", ext)
 			}
 		}
+
 		d := t.TempDir()
 		path := filepath.Join(d, "a.h")
 		writeFile(t, path, "void f() {\n}\nvoid g() {\n}\n")
@@ -260,6 +265,7 @@ func TestFileHandling(t *testing.T) {
 		if !strings.Contains(out, "Formatted") {
 			t.Errorf("no Formatted line in %q", out)
 		}
+
 		got, _ := os.ReadFile(path)
 		if string(got) != "void f() {\n}\n\nvoid g() {\n}\n" {
 			t.Errorf("got %q", got)
@@ -276,15 +282,19 @@ func TestFileHandling(t *testing.T) {
 	t.Run("build variant and hidden dirs skipped", func(t *testing.T) {
 		skipped := []string{"build-consumer", "build_debug", "Build-Release", "cmake-build-debug", "x-build",
 			".vs", ".idea", ".git", "node_modules", "Debug.dir", "foo.egg-info", "_deps", "builder", "buildings"}
+
 		kept := []string{"src", "include", "rebuild", "rebuilt-src"}
+
 		d := t.TempDir()
 		for _, n := range append(append([]string{}, skipped...), kept...) {
 			writeFile(t, filepath.Join(d, n, "a.cpp"), "int x;\n")
 		}
+
 		var found []string
 		for _, p := range expand([]string{d}) {
 			found = append(found, filepath.Base(filepath.Dir(p)))
 		}
+
 		sort.Strings(found)
 		sort.Strings(kept)
 		if strings.Join(found, ",") != strings.Join(kept, ",") {
@@ -299,6 +309,7 @@ func TestFileHandling(t *testing.T) {
 		if !strings.Contains(out, "Skipped "+path) {
 			t.Errorf("got %q", out)
 		}
+
 		got, _ := os.ReadFile(path)
 		if string(got) != "a();\nreturn b;\n" {
 			t.Errorf("file was modified: %q", got)
@@ -323,6 +334,7 @@ func TestFileHandling(t *testing.T) {
 		if out != "a();\n\nreturn b;\n" {
 			t.Errorf("stdout %q", out)
 		}
+
 		if !regexp.MustCompile(`Done: .* ms`).MatchString(errOut) {
 			t.Errorf("stderr %q", errOut)
 		}
@@ -332,6 +344,7 @@ func TestFileHandling(t *testing.T) {
 		for _, n := range []string{"a", "b", "c", "d", "e", "f", "g", "h"} {
 			writeFile(t, filepath.Join(d, n+".cpp"), "a();\nreturn b;\n")
 		}
+
 		out, _, _ := runCLI(t, "", false, d)
 		var names []string
 		for _, l := range strings.Split(out, "\n") {
@@ -339,6 +352,7 @@ func TestFileHandling(t *testing.T) {
 				names = append(names, filepath.Base(strings.TrimPrefix(l, "Formatted ")))
 			}
 		}
+
 		if got := strings.Join(names, ","); got != "a.cpp,b.cpp,c.cpp,d.cpp,e.cpp,f.cpp,g.cpp,h.cpp" {
 			t.Errorf("got %s", got)
 		}
